@@ -21,15 +21,17 @@ Edges * Voronoi::GetEdges(Vertices * v, int w, int h)
 	if(!edges) edges = new Edges();
 	else 
 	{
-		for(Vertices::iterator	i = points.begin(); i != points.end(); ++i) delete (*i);
-		for(Edges::iterator		i = edges->begin(); i != edges->end(); ++i) delete (*i);
+		for(Vertices::iterator	i = points.begin(); i != points.end(); ++i)
+			delete (*i);
+		for(Edges::iterator		i = edges->begin(); i != edges->end(); ++i)
+			delete (*i);
 		points.clear();
 		edges->clear();
 	}
 	
 	for(Vertices::iterator i = places->begin(); i!=places->end(); ++i)
 	{
-		queue.push(new VEvent( *i, true));
+		queue.push(new VEvent( new VPoint((*i)->x,(*i)->y, (*i)->r), true));
 	}
 
 	VEvent * e;
@@ -37,8 +39,12 @@ Edges * Voronoi::GetEdges(Vertices * v, int w, int h)
 	{
 		e = queue.top();
 		queue.pop();
-		ly = e->point->y;
-		if(deleted.find(e) != deleted.end()) { delete(e); deleted.erase(e); continue;}
+		ly = e->y;
+		if(deleted.find(e) != deleted.end()) {
+			delete(e);
+			deleted.erase(e);
+			continue;
+		}
 		if(e->pe) InsertParabola(e->point);
 		else RemoveParabola(e);
 		delete(e);
@@ -60,7 +66,10 @@ Edges * Voronoi::GetEdges(Vertices * v, int w, int h)
 
 void	Voronoi::InsertParabola(VPoint * p)
 {
-	if(!root){root = new VParabola(p); return;}
+	if(!root){
+		root = new VParabola(p);
+		return;
+	}
 
 	if(root->isLeaf && root->site->y - p->y < 1) // degenerovan?pøípad - ob?spodn?místa ve stejn?výšce
 	{
@@ -84,7 +93,7 @@ void	Voronoi::InsertParabola(VPoint * p)
 		par->cEvent = 0;
 	}
 	
-	VPoint * start = new VPoint(p->x, GetY(par->site, p->x), 0);
+	VPoint * start = new VPoint(p->x, (GetY(par->site, p->x+p->r)+GetY(par->site, p->x-p->r))/2, 0);
 	points.push_back(start);
 
 	VEdge * el = new VEdge(start, par->site, p);
@@ -162,6 +171,54 @@ void	Voronoi::RemoveParabola(VEvent * e)
 	CheckCircle(p2);
 }
 
+void	Voronoi::RemoveParabola(VParabola *p1, VPoint *p)
+{
+	VParabola * xl = VParabola::GetLeftParent(p1);
+	VParabola * xr = VParabola::GetRightParent(p1);
+
+	VParabola * p0 = VParabola::GetLeftChild(xl);
+	VParabola * p2 = VParabola::GetRightChild(xr);
+
+	if(p0 == p2) std::cout << "chyba - prav?a lev?parabola m?stejn?ohnisko!\n";
+
+	if(p0->cEvent){ deleted.insert(p0->cEvent); p0->cEvent = 0; }
+	if(p2->cEvent){ deleted.insert(p2->cEvent); p2->cEvent = 0; }
+
+	points.push_back(p);
+
+	xl->edge->end = p;
+	xr->edge->end = p;
+	
+	VParabola * higher;
+	VParabola * par = p1;
+	while(par != root)
+	{
+		par = par->parent;
+		if(par == xl) higher = xl;
+		if(par == xr) higher = xr;
+	}
+	higher->edge = new VEdge(p, p0->site, p2->site);
+	edges->push_back(higher->edge);
+
+	VParabola * gparent = p1->parent->parent;
+	if(p1->parent->Left() == p1)
+	{
+		if(gparent->Left()  == p1->parent) gparent->SetLeft ( p1->parent->Right() );
+		if(gparent->Right() == p1->parent) gparent->SetRight( p1->parent->Right() );
+	}
+	else
+	{
+		if(gparent->Left()  == p1->parent) gparent->SetLeft ( p1->parent->Left()  );
+		if(gparent->Right() == p1->parent) gparent->SetRight( p1->parent->Left()  );
+	}
+
+	delete p1->parent;
+	delete p1;
+
+	CheckCircle(p0);
+	CheckCircle(p2);
+}
+
 void	Voronoi::FinishEdge(VParabola * n)
 {
 	if(n->isLeaf) {delete n; return;}
@@ -189,12 +246,12 @@ double	Voronoi::GetXOfEdge(VParabola * par, double y)
 	double dp = 2.0 * (p->y - y);
 	double a1 = 1.0 / dp;
 	double b1 = -2.0 * p->x / dp;
-	double c1 = y + dp / 4 + p->x * p->x / dp;
+	double c1 = y + dp / 4 + p->x * p->x / dp-p->r*p->r/dp;
 			
 		   dp = 2.0 * (r->y - y);
 	double a2 = 1.0 / dp;
 	double b2 = -2.0 * r->x/dp;
-	double c2 = ly + dp / 4 + r->x * r->x / dp;
+	double c2 = ly + dp / 4 + r->x * r->x / dp-r->r*r->r/dp;
 			
 	double a = a1 - a2;
 	double b = b1 - b2;
@@ -230,7 +287,8 @@ double	Voronoi::GetY(VPoint * p, double x) // ohnisko, x-souøadnice
 	double dp = 2 * (p->y - ly);
 	double a1 = 1 / dp;
 	double b1 = -2 * p->x / dp;
-	double c1 = ly + dp / 4 + p->x * p->x / dp;
+	double c1 = ly + dp / 4 + p->x * p->x / dp-p->r*p->r/dp;
+	//double c1 = (p->x*p->x+p->y*p->y-ly*ly-p->r*p->r)/dp;
 	
 	return(a1*x*x + b1*x + c1);
 }
@@ -251,8 +309,14 @@ void	Voronoi::CheckCircle(VParabola * b)
 
 	double dx = a->site->x - s->x;
 	double dy = a->site->y - s->y;
+	double rad=a->site->r;
+	double dist=(dx * dx) + (dy * dy) -rad*rad;
 
-	double d = std::sqrt( (dx * dx) + (dy * dy) );
+	if (dist<0){
+		RemoveParabola(b,s);
+		return;
+	}
+	double d = std::sqrt(dist);
 
 	if(s->y - d >= ly) { return;}
 
@@ -275,7 +339,7 @@ VPoint * Voronoi::GetEdgeIntersection(VEdge * a, VEdge * b)
 	if((y - b->start->y)/b->direction->y < 0) return 0;	
 
 	VPoint * p = new VPoint(x, y, 0);		
-	points.push_back(p);
+	//points.push_back(p);
 	return p;
 }
 

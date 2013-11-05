@@ -20,6 +20,7 @@ public:
 	VPoint *	point;
 	bool		pe;
 	double		y;
+	double		r;
 	VParabola * arch;
 
 	/*
@@ -34,6 +35,7 @@ public:
 		point	= p;
 		pe		= pev;
 		y		= p->y;
+		r=p->r;
 		arch	= 0;
 	}
 
@@ -43,7 +45,7 @@ public:
 
 	struct CompareEvent : public std::binary_function<VEvent*, VEvent*, bool>
 	{
-		bool operator()(const VEvent* l, const VEvent* r) const { return (l->y < r->y); }
+		bool operator()(const VEvent* l, const VEvent* r) const { return (l->y+l->r < r->y+r->r); }
 	};
 };
 

@@ -89,6 +89,7 @@ namespace vor
 
 		void		InsertParabola(VPoint * p);
 		void		RemoveParabola(VEvent * e);
+		void		RemoveParabola(VParabola *p1, VPoint *p);
 		void		FinishEdge(VParabola * n);
 		double		GetXOfEdge(VParabola * par, double y);
 		VParabola * GetParabolaByX(double xx);

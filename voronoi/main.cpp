@@ -41,11 +41,17 @@ void drawALine(double x1,double y1, double x2, double y2)
 	glEnd();
 }
 
-void drawACircle(double x, double y,double r){
+void drawACircle(double x, double y,double r, bool poly){
 	int n=100;
 	double angle=2*PI/n;
-	glBegin(GL_POLYGON);
-	glColor3f(0,0.5,0);
+	if (poly){
+		glBegin(GL_POLYGON);
+		glColor3f(0,0.5,0);
+	}
+	else {
+		glBegin(GL_LINE_LOOP);
+		glColor3f(0.5,0.5,0.5);
+	}
 	for (int i=0;i<n;i++){
 		glVertex2f(x+r*cos(angle*i), y+r*sin(angle*i));
 	}
@@ -60,7 +66,7 @@ void readFile(){
 	string command;// the command of each line
 	string numberStr; // for single LongInt operation
 
-	ifstream inputFile("input.txt",ios::in);
+	ifstream inputFile("input8.txt",ios::in);
 	int x,y,r;
 	if(inputFile.fail()){
 		cerr << "Error: Cannot read input file \"" << "input.txt" << "\"";
@@ -70,34 +76,43 @@ void readFile(){
 		getline(inputFile,line);
 		stringstream linestream(line);
 		linestream >> x >> y >>r;
-		ver->push_back(new VPoint(10*x , 10*y, r ));
+		ver->push_back(new VPoint(10*x , 10*y, 10*r ));
 	}
 }
 
 void drawVoronoi()
 {	
-	double x,y,r;
+	double x,y,r,dx,dy;
 	edg = v->GetEdges(ver, w, w);
 
+	dx=-0.2;
+	dy=-0.5;
 	for(Vertices::iterator i = ver->begin(); i!= ver->end(); ++i)
 	{
-		x=-1+2*(*i)->x/w;
-		y=-1+2*(*i)->y/w;
-		r=(*i)->r;
-		drawACircle(x,y,r/10);
+		x=dx+(*i)->x/w;
+		y=dy+(*i)->y/w;
+		r=(*i)->r/w;
+		drawACircle(x,y,r,1);
 	}
 
 	for(Vertices::iterator i = ver->begin(); i!= ver->end(); ++i)
 	{
-		x=-1+2*(*i)->x/w;
-		y=-1+2*(*i)->y/w;
-		r=(*i)->r;
+		x=dx+(*i)->x/w;
+		y=dy+(*i)->y/w;
+		r=(*i)->r/w;
+		drawACircle(x,y,r,0);
+	}
+
+	for(Vertices::iterator i = ver->begin(); i!= ver->end(); ++i)
+	{
+		x=dx+(*i)->x/w;
+		y=dy+(*i)->y/w;
 		drawAPoint(x,y);
 		//drawAPoint((*i)->x, (*i)->y);
 	}
 
 	for(Edges::iterator i = edg->begin(); i!= edg->end(); ++i)
-		drawALine(-1+2*(*i)->start->x/w,  -1+2*(*i)->start->y/w, -1+2*(*i)->end->x/w, -1+2*(*i)->end->y/w);
+		drawALine(dx+(*i)->start->x/w,  dy+(*i)->start->y/w, dx+(*i)->end->x/w, dy+(*i)->end->y/w);
 }
 
 void display (void) 
