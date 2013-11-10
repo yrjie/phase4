@@ -6,17 +6,20 @@
 
 using namespace vor;
 
+Centers *cent0;
+
 Voronoi::Voronoi()
 {
 	edges = 0;
 }
 
-Edges * Voronoi::GetEdges(Vertices * v, int w, int h)
+Edges * Voronoi::GetEdges(Vertices * v, int w, int h, Centers *cent)
 {
 	places = v;
 	width = w;
 	height = h;
 	root = 0;
+	cent0=cent;
 
 	if(!edges) edges = new Edges();
 	else 
@@ -31,7 +34,7 @@ Edges * Voronoi::GetEdges(Vertices * v, int w, int h)
 	
 	for(Vertices::iterator i = places->begin(); i!=places->end(); ++i)
 	{
-		queue.push(new VEvent( new VPoint((*i)->x,(*i)->y, (*i)->r), true));
+		queue.push(new VEvent( *i, true));
 	}
 
 	VEvent * e;
@@ -136,6 +139,7 @@ void	Voronoi::RemoveParabola(VEvent * e)
 	if(p2->cEvent){ deleted.insert(p2->cEvent); p2->cEvent = 0; }
 
 	VPoint * p = new VPoint(e->point->x, GetY(p1->site, e->point->x),0);
+	cent0->push_back(new VCenter(p->x,p->y,p0->site,p1->site,p2->site));
 	points.push_back(p);
 
 	xl->edge->end = p;
@@ -262,7 +266,8 @@ double	Voronoi::GetXOfEdge(VParabola * par, double y)
 	double x2 = (-b - std::sqrt(disc)) / (2*a);
 
 	double ry;
-	if(p->y < r->y ) ry =  std::max(x1, x2);
+	if(p->y+p->r < r->y+r->r ) ry =  std::max(x1, x2);
+	//if(p->y < r->y ) ry =  std::max(x1, x2);
 	else ry = std::min(x1, x2);
 
 	return ry;
@@ -317,8 +322,6 @@ void	Voronoi::CheckCircle(VParabola * b)
 		return;
 	}
 	double d = std::sqrt(dist);
-
-	if(s->y - d >= ly) { return;}
 
 	VEvent * e = new VEvent(new VPoint(s->x, s->y - d,0), false);
 	points.push_back(e->point);

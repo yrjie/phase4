@@ -85,6 +85,7 @@
     <ClCompile Include="VPoint.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="VCenter.h" />
     <ClInclude Include="VEvent.h" />
     <ClInclude Include="Voronoi.h" />
     <ClInclude Include="VParabola.h" />

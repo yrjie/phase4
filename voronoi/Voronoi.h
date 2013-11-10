@@ -9,6 +9,7 @@
 #include "VEdge.h"
 #include "VParabola.h"
 #include "VEvent.h"
+#include "VCenter.h"
 #include <functional>
 
 
@@ -20,6 +21,7 @@ namespace vor
 
 	typedef std::list<VPoint *>		Vertices	;
 	typedef std::list<VEdge *>		Edges		;
+	typedef std::list<VCenter *>		Centers		;
 
 	/*
 		Class for generating the Voronoi diagram
@@ -48,7 +50,7 @@ namespace vor
 			All the data structures are managed by this class
 		*/
 
-		Edges *			GetEdges(Vertices * v, int w, int h);
+		Edges *			GetEdges(Vertices * v, int w, int h, Centers *cent);
 
 	private:
 
