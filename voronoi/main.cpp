@@ -84,6 +84,14 @@ void drawATriangle(VPoint *p1, VPoint *p2, VPoint *p3){
 	glEnd();
 }
 
+int crossProduct(VPoint *p1, VPoint *p2, VPoint *q1, VPoint *q2){
+	double x1=p2->x-p1->x,y1=p2->y-p1->y,x2=q2->x-q1->x,y2=q2->y-q1->y,cp;
+	cp=x1*y2-x2*y1;
+	if (abs(cp)<1e-8) return 0;
+	if (cp>1e-8) return 1;
+	if (cp<1e-8) return -1;
+}
+
 void readFile(){
 
 	string line_noStr;
@@ -108,7 +116,7 @@ void readFile(){
 
 void drawAlpha()
 {	
-	double x,y,r;
+	double x,y,r, xt,yt;
 
 	for(Vertices::iterator i = ver->begin(); i!= ver->end(); ++i)
 	{
@@ -127,7 +135,6 @@ void drawAlpha()
 	}
 
 	for(Centers::iterator i = cent->begin(); i!= cent->end(); ++i){
-		double xt,yt;
 		xt=(*i)->p1->x-(*i)->x;
 		yt=(*i)->p1->y-(*i)->y;
 		if (sqrt(xt*xt+yt*yt)<(*i)->p1->r)
@@ -135,11 +142,24 @@ void drawAlpha()
 	}
 
 	for(Edges::iterator i = edg->begin(); i!= edg->end(); ++i){
+		double dist1, dist2;
+		VPoint *p1=(*i)->start,*p2=(*i)->end,*lp=(*i)->left,*rp=(*i)->right;
 		double f=(*i)->f, g=(*i)->g;
-		VPoint *p0=(*i)->left,*p1=(*i)->right;
-		double dist=abs((f*p0->x-p0->y+g)/sqrt(f*f+1));
-		if (dist<p0->r)
-			drawALine(dx+p0->x/w,  dy+p0->y/w, dx+p1->x/w, dy+p1->y/w, 1);
+		if (crossProduct(lp, rp, lp, p1)*crossProduct(lp, rp, lp, p2)<=0){
+			dist1=abs((f*lp->x-lp->y+g)/sqrt(f*f+1));
+			if (dist1<lp->r)
+				drawALine(dx+lp->x/w,  dy+lp->y/w, dx+rp->x/w, dy+rp->y/w, 1);
+		}
+		else {
+			xt=p1->x-lp->x;
+			yt=p1->y-lp->y;
+			dist1=sqrt(xt*xt+yt*yt);
+			xt=p2->x-lp->x;
+			yt=p2->y-lp->y;
+			dist2=sqrt(xt*xt+yt*yt);
+			if (dist1<lp->r||dist2<lp->r)
+				drawALine(dx+lp->x/w,  dy+lp->y/w, dx+rp->x/w, dy+rp->y/w, 1);
+		}
 	}
 
 	for(Vertices::iterator i = ver->begin(); i!= ver->end(); ++i)
@@ -176,7 +196,6 @@ void display (void)
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -5.0f); 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//drawAPoint(650,450);
 	drawAlpha();
 	drawText();
 	glutSwapBuffers();
@@ -184,12 +203,11 @@ void display (void)
 
 void reshape (int width, int height) 
 {
-	glViewport(0, 0, (GLsizei)width, (GLsizei)height); // Set our viewport to the size of our window
-	glMatrixMode(GL_PROJECTION); // Switch to the projection matrix so that we can manipulate how our scene is viewed
-	glLoadIdentity(); // Reset the projection matrix to the identity matrix so that we don't get any artifacts (cleaning up)
-	//gluOrtho2D(0,width,height,0);
-	gluPerspective(22.5, (GLfloat)width / (GLfloat)height, 1.0, 100.0); // Set the Field of view angle (in degrees), the aspect ratio of our window, and the new and far planes
-	glMatrixMode(GL_MODELVIEW); // Switch back to the model view matrix, so that we can start drawing shapes correctly
+	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(22.5, (GLfloat)width / (GLfloat)height, 1.0, 100.0);
+	glMatrixMode(GL_MODELVIEW);
 }
 
 void MyMouse(int button, int state, int x, int y){
@@ -223,16 +241,14 @@ int main (int argc, char **argv)
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode (GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutInitWindowSize (1000, 750); // Set the width and height of the window
-	glutInitWindowPosition (50, 50); // Set the position of the window
-	glutCreateWindow ("Alpha shape"); // Set the title for the window
+	glutInitWindowSize (1000, 750);
+	glutInitWindowPosition (50, 50);
+	glutCreateWindow ("Alpha shape");
 	glClearColor (1.0,1.0,1.0, 1.0);
-	glutDisplayFunc(display); // Tell GLUT to use the method "display" for rendering
+	glutDisplayFunc(display);
 
-	glutReshapeFunc(reshape); // Tell GLUT to use the method "reshape" for reshaping
+	glutReshapeFunc(reshape);
 	glutMouseFunc(MyMouse);
-	//glutKeyboardFunc(keyPressed); // Tell GLUT to use the method "keyPressed" for key presses
-	//glutKeyboardUpFunc(keyUp); // Tell GLUT to use the method "keyUp" for key up events
 
 	glutMainLoop(); // Enter GLUT's main loop
 	

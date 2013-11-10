@@ -39,13 +39,9 @@ public:
 		arch	= 0;
 	}
 
-	/*
-		function for comparing two events (by "y" property)
-	*/
-
 	struct CompareEvent : public std::binary_function<VEvent*, VEvent*, bool>
 	{
-		bool operator()(const VEvent* l, const VEvent* r) const { return (l->y+l->r < r->y+r->r); }
+		bool operator()(const VEvent* l, const VEvent* r) const { return (l->y < r->y); }
 	};
 };
 
