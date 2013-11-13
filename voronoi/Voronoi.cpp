@@ -74,7 +74,7 @@ void	Voronoi::InsertParabola(VPoint * p)
 		return;
 	}
 
-	if(root->isLeaf && root->site->y - p->y < 1)
+	/*if(root->isLeaf && root->site->y - p->y < 1)
 	{
 		VPoint * fp = root->site;
 		root->isLeaf = false;
@@ -86,7 +86,7 @@ void	Voronoi::InsertParabola(VPoint * p)
 		else root->edge = new VEdge(s, p, fp);
 		edges->push_back(root->edge);
 		return;
-	}
+	}*/
 
 	VParabola * par = GetParabolaByX(p->x);
 	
@@ -223,10 +223,16 @@ void	Voronoi::FinishEdge(VParabola * n)
 {
 	if(n->isLeaf) {delete n; return;}
 	double mx;
-	if(n->edge->direction->x > 0.0)	mx = std::max(width,	n->edge->start->x + 10 );
-	else							mx = std::min(0.0,		n->edge->start->x - 10);
-	
-	VPoint * end = new VPoint(mx, mx * n->edge->f + n->edge->g,0); 
+	VPoint * end;
+	if (abs(n->edge->direction->x)<1e-8){
+		if (n->edge->direction->y>0) end=new VPoint(-n->edge->g, height,0);
+		else end=new VPoint(-n->edge->g, 0,0);
+	}
+	else{
+		if(n->edge->direction->x > 0.0)	mx = std::max(width,	n->edge->start->x + 10 );
+		else							mx = std::min(0.0,		n->edge->start->x - 10);
+		end = new VPoint(mx, mx * n->edge->f + n->edge->g,0); 
+	}	
 	n->edge->end = end;
 	points.push_back(end);
 			
@@ -326,8 +332,20 @@ void	Voronoi::CheckCircle(VParabola * b)
 
 VPoint * Voronoi::GetEdgeIntersection(VEdge * a, VEdge * b)
 {
-	double x = (b->g-a->g) / (a->f - b->f);
-	double y = a->f * x + a->g;
+	double x;
+	double y;
+	if (a->cy==0){
+		x=-a->g;
+		y=b->f*x+b->g;
+	}
+	else if (b->cy==0){
+		x=-b->g;
+		y=a->f*x+a->g;
+	}
+	else {
+		x = (b->g-a->g) / (a->f - b->f);
+		y = a->f * x + a->g;
+	}
 
 	if((x - a->start->x)/a->direction->x < 0) return 0;
 	if((y - a->start->y)/a->direction->y < 0) return 0;

@@ -3,6 +3,7 @@
 
 #include "Vpoint.h"
 #include <iostream>
+#include <cmath>
 
 /*
 	A class that stores an edge in Voronoi diagram
@@ -30,6 +31,7 @@ public:
 	
 	double		f;
 	double		g;
+	int cy;
 
 	VEdge * neighbour;
 
@@ -49,8 +51,16 @@ public:
 		neighbour	= 0;
 		end			= 0;
 
-		f = (b->x - a->x) / (a->y - b->y) ;
-		g = s->y - f * s->x ;
+		if (abs(a->y - b->y)<1e-8){
+			cy=0;
+			f=1;
+			g=-s->x;
+		}
+		else {
+			cy=1;
+			f = (b->x - a->x) / (a->y - b->y) ;
+			g = s->y - f * s->x ;
+		}
 		direction = new VPoint(b->y - a->y, -(b->x - a->x),0);
 	}
 

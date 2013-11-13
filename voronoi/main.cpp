@@ -3,6 +3,7 @@
 #include <math.h>
 #include <algorithm>
 #include <time.h>
+#include <cstring>
 #include <string>
 #include <fstream>
 #include <strstream>
@@ -92,18 +93,22 @@ int crossProduct(VPoint *p1, VPoint *p2, VPoint *q1, VPoint *q2){
 	if (cp<1e-8) return -1;
 }
 
-void readFile(){
+void readFile(char *infile){
 
 	string line_noStr;
 
 	string line;   // each line of the file
 	string command;// the command of each line
 	string numberStr; // for single LongInt operation
+	char fname[1024];
+	if (infile==NULL)
+		strcpy(fname,"input.txt");
+	else strcpy(fname,infile);
 
-	ifstream inputFile("input5.txt",ios::in);
+	ifstream inputFile(fname,ios::in);
 	int x,y,r;
 	if(inputFile.fail()){
-		cerr << "Error: Cannot read input file \"" << "input.txt" << "\"";
+		cerr << "Error: Cannot read input file \"" << fname << "\"";
 		return;
 	}
 	while(inputFile.good()){
@@ -112,6 +117,17 @@ void readFile(){
 		linestream >> x >> y >>r;
 		ver->push_back(new VPoint(10*x , 10*y, 10*r ));
 	}
+}
+
+void drawBoundary(){
+	glLineWidth(1);
+	glBegin(GL_LINE_LOOP);
+	glColor3f(0,0,0);
+	glVertex2f(dx+0,dy+0);
+	glVertex2f(dx+10,dy+0);
+	glVertex2f(dx+10,dy+10);
+	glVertex2f(dx+0,dy+10);
+	glEnd();
 }
 
 void drawAlpha()
@@ -145,8 +161,9 @@ void drawAlpha()
 		double dist1, dist2;
 		VPoint *p1=(*i)->start,*p2=(*i)->end,*lp=(*i)->left,*rp=(*i)->right;
 		double f=(*i)->f, g=(*i)->g;
+		int cy=(*i)->cy;
 		if (crossProduct(lp, rp, lp, p1)*crossProduct(lp, rp, lp, p2)<=0){
-			dist1=abs((f*lp->x-lp->y+g)/sqrt(f*f+1));
+			dist1=abs((f*lp->x-cy*lp->y+g)/sqrt(f*f+cy*cy));
 			if (dist1<lp->r)
 				drawALine(dx+lp->x/w,  dy+lp->y/w, dx+rp->x/w, dy+rp->y/w, 1);
 		}
@@ -196,6 +213,7 @@ void display (void)
 	glLoadIdentity();
 	glTranslatef(0.0f, 0.0f, -5.0f); 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//drawBoundary();
 	drawAlpha();
 	drawText();
 	glutSwapBuffers();
@@ -231,11 +249,15 @@ void MyMouse(int button, int state, int x, int y){
 
 int main (int argc, char **argv) 
 {
+	char *infile;
 	v = new Voronoi();
 	ver = new Vertices();
 	cent=new Centers();
 
-	readFile();
+	if (argc>1)
+		infile=argv[1];
+	else infile=NULL;
+	readFile(infile);
 	
 	edg = v->GetEdges(ver, w, w, cent);
 
