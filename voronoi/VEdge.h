@@ -54,7 +54,7 @@ public:
 		if (abs(a->y - b->y)<1e-8){
 			cy=0;
 			f=1;
-			g=-s->x;
+			g=-(b->x + a->x)/2+(a->r*a->r-b->r*b->r)/(a->x-b->x)/2;
 		}
 		else {
 			cy=1;
